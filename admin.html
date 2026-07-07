@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oversized — Dashboard</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F5F0E6; --surface:#FFFFFF; --navy:#5C4E6E; --navy-deep:#2B1B3D;
+    --clay:#5B2A8C; --clay-soft:#C9A227; --muted:#948A9E; --line: rgba(43,27,61,0.10);
+    --radius:16px; --radius-sm:10px; --radius-pill:999px;
+    --shadow-sm: 0 2px 10px rgba(22,26,44,0.06);
+    --shadow-md: 0 12px 32px rgba(22,26,44,0.10);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--cream); color:var(--navy-deep); font-family:'Poppins', sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased;}
+  img{max-width:100%; display:block;}
+  ::placeholder{color:#A7ACBD;}
+  input[type=text], input[type=email], input[type=password], select, textarea{
+    width:100%; padding:12px 14px; background:var(--surface); border:1px solid var(--line);
+    color:var(--navy-deep); border-radius:var(--radius-sm); font-family:'Poppins'; font-size:14px;
+  }
+  textarea{resize:vertical; min-height:90px;}
+  label{display:block; font-size:12px; letter-spacing:0.5px; text-transform:uppercase; color:var(--muted); margin:14px 0 6px; font-weight:600;}
+  label:first-child{margin-top:0;}
+  .btn{
+    background:linear-gradient(135deg, var(--clay), var(--clay-soft)); color:#fff; border:none;
+    padding:12px 22px; font-size:13px; font-weight:600; cursor:pointer; border-radius:var(--radius-pill);
+    transition:transform .15s, box-shadow .15s; box-shadow:0 8px 22px rgba(91,42,140,0.3);
+  }
+  .btn:hover{transform:translateY(-2px); box-shadow:0 14px 30px rgba(91,42,140,0.4);}
+  .btn.ghost{background:transparent; color:var(--navy-deep); border:1px solid var(--line); box-shadow:none;}
+  .btn.ghost:hover{background:var(--surface); transform:none;}
+  .btn.danger{background:transparent; color:#A5453B; border:1px solid rgba(165,69,59,0.3); box-shadow:none; padding:8px 14px; font-size:12px;}
+  .btn.danger:hover{background:rgba(165,69,59,0.08); transform:none;}
+  .msg{margin-top:14px; font-size:13px; display:none; padding:10px 14px; border-radius:var(--radius-sm);}
+  .msg.error{color:#A5453B; background:rgba(165,69,59,0.08); display:block;}
+  .msg.ok{color:#3E6B3E; background:rgba(62,107,62,0.08); display:block;}
+
+  /* ---------- Sign in ---------- */
+  #signinScreen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .signin-card{background:var(--surface); border-radius:20px; padding:40px 34px; max-width:380px; width:100%; box-shadow:var(--shadow-md);}
+  .signin-card h1{font-family:'Anton'; text-transform:uppercase; font-size:26px; margin:0 0 6px;}
+  .signin-card p.sub{color:var(--muted); font-size:13px; margin:0 0 24px;}
+
+  /* ---------- Dashboard shell ---------- */
+  #dashboard{display:none;}
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between; padding:14px 24px;
+    background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20;
+  }
+  .topbar-brand{display:flex; align-items:center; gap:10px; font-family:'Anton'; text-transform:uppercase; font-size:16px; letter-spacing:0.5px;}
+  .topbar-brand img{height:30px; width:30px; border-radius:8px;}
+  .topbar-right{display:flex; align-items:center; gap:14px; font-size:12px; color:var(--muted);}
+  .signout{background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; text-decoration:underline;}
+
+  .shell{display:flex; min-height:calc(100vh - 61px);}
+  .sidebar{width:220px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--line); padding:20px 14px;}
+  .sidebar button{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:none; border:none;
+    padding:11px 14px; border-radius:var(--radius-sm); font-family:'Poppins'; font-size:13px; font-weight:600;
+    color:var(--navy); cursor:pointer; margin-bottom:4px; transition:background .15s;
+  }
+  .sidebar button:hover{background:rgba(91,42,140,0.08);}
+  .sidebar button.active{background:linear-gradient(135deg, var(--clay), var(--clay-soft)); color:#fff;}
+  .main{flex:1; padding:32px; max-width:920px;}
+  .view{display:none;}
+  .view.active{display:block;}
+  .view-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;}
+  .view-head h2{font-family:'Anton'; text-transform:uppercase; font-size:24px; margin:0;}
+  .view-head p{color:var(--muted); font-size:13px; margin:4px 0 0;}
+
+  .card{background:var(--surface); border-radius:var(--radius); padding:26px; box-shadow:var(--shadow-sm); margin-bottom:20px;}
+  .form-row{display:flex; gap:12px;}
+  .form-row > div{flex:1;}
+  .color-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px 24px;}
+  .color-field label{margin-top:0;}
+  .color-field input[type=color]{
+    width:100%; height:52px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    background:var(--surface); cursor:pointer; padding:5px;
+  }
+  .btn.ghost{background:transparent; color:var(--navy-deep); border:1px solid var(--line); box-shadow:none;}
+  @media (max-width:640px){ .color-grid{grid-template-columns:1fr;} }
+
+  .dropzone{
+    border:1.5px dashed var(--line); border-radius:var(--radius); padding:26px 16px; text-align:center;
+    cursor:pointer; transition:border-color .2s, background .2s;
+  }
+  .dropzone:hover{border-color:var(--clay); background:rgba(91,42,140,0.05);}
+  .dropzone input{display:none;}
+  #previewImg{max-height:160px; margin:14px auto 0; display:none; border-radius:10px;}
+
+  .product-table{width:100%; border-collapse:collapse;}
+  .product-table td{padding:12px 8px; border-bottom:1px solid var(--line); font-size:13px; vertical-align:middle;}
+  .product-table img{width:44px; height:44px; object-fit:cover; border-radius:8px; background:var(--cream);}
+  .product-table .pname{font-weight:600;}
+  .product-table .pmeta{color:var(--muted); font-size:12px;}
+  .row-actions{display:flex; gap:8px; justify-content:flex-end;}
+  .row-actions button.edit{background:none; border:1px solid var(--line); color:var(--navy); font-size:12px; padding:8px 12px; border-radius:999px; cursor:pointer;}
+  .empty-row{text-align:center; color:var(--muted); padding:30px; font-size:13px;}
+
+  .stat-cards{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px;}
+  .stat-cards .card{margin-bottom:0; text-align:center;}
+  .stat-cards b{display:block; font-family:'Anton'; font-size:30px;}
+  .stat-cards span{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px;}
+
+  @media (max-width:780px){
+    .shell{flex-direction:column;}
+    .sidebar{width:100%; display:flex; gap:6px; overflow-x:auto; border-right:none; border-bottom:1px solid var(--line);}
+    .sidebar button{white-space:nowrap; margin-bottom:0;}
+    .main{padding:20px;}
+    .stat-cards{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div id="signinScreen">
+  <div class="signin-card">
+    <h1>Dashboard Sign In</h1>
+    <p class="sub">Private — not linked from the public site.</p>
+    <label>Email</label>
+    <input type="email" id="email" placeholder="you@example.com">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="••••••••">
+    <button class="btn" style="width:100%; margin-top:20px;" onclick="doSignIn()">Sign In</button>
+    <p class="msg error" id="signinMsg" style="display:none;"></p>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="topbar">
+    <div class="topbar-brand"><img src="data:image/png;base64,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" alt="logo">Dashboard</div>
+    <div class="topbar-right">
+      <span id="whoami"></span>
+      <button class="signout" onclick="doSignOut()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="shell">
+    <div class="sidebar">
+      <button class="nav-btn active" data-view="products" onclick="switchView('products')">🧵 Products</button>
+      <button class="nav-btn" data-view="content" onclick="switchView('content')">✎ Site Text</button>
+      <a href="index.html" target="_blank" style="text-decoration:none;">
+        <button style="width:100%;">↗ View live site</button>
+      </a>
+    </div>
+
+    <div class="main">
+
+      <!-- PRODUCTS VIEW -->
+      <div class="view active" id="view-products">
+        <div class="stat-cards">
+          <div class="card"><b id="statCount">0</b><span>Live products</span></div>
+          <div class="card"><b id="statHoodies">0</b><span>Hoodies</span></div>
+          <div class="card"><b id="statTees">0</b><span>Tees</span></div>
+        </div>
+
+        <div class="view-head">
+          <div><h2 id="formTitle">Add A Design</h2><p>New designs appear on the live site immediately.</p></div>
+          <button class="btn ghost" id="cancelEditBtn" style="display:none;" onclick="resetForm()">Cancel edit</button>
+        </div>
+
+        <div class="card">
+          <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:28px;" id="formGrid">
+            <div>
+              <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                <input type="file" id="fileInput" accept="image/*" multiple>
+                <div style="font-size:13px; color:var(--muted);">Tap to upload photos<br>(up to 4, PNG/JPG, under 5MB each)</div>
+              </div>
+              <div id="previewRow" style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;"></div>
+            </div>
+            <form id="designForm" onsubmit="return submitDesign(event)">
+              <label>Product name</label>
+              <input type="text" id="designName" placeholder="e.g. Sunset Tiger Hoodie" required>
+              <div class="form-row">
+                <div>
+                  <label>Category</label>
+                  <select id="category" onchange="updateGarmentOptions()">
+                    <option value="Streetwear">Streetwear</option>
+                    <option value="Men's Wear">Men's Wear</option>
+                    <option value="Women's Wear">Women's Wear</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Garment</label>
+                  <select id="garment"></select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div>
+                  <label>Price (₹)</label>
+                  <input type="text" id="designPrice" placeholder="1499" required>
+                </div>
+              </div>
+              <label>Description</label>
+              <textarea id="designDesc" placeholder="Fabric, fit notes, styling tips…" style="min-height:80px;"></textarea>
+              <button type="submit" class="btn" style="width:100%; margin-top:20px;" id="submitBtn">Add to shop</button>
+              <p class="msg" id="uploadMsg"></p>
+            </form>
+          </div>
+        </div>
+
+        <div class="view-head" style="margin-top:8px;">
+          <div><h2 style="font-size:18px;">Live On Site</h2></div>
+        </div>
+        <div class="card" style="padding:8px 26px;">
+          <table class="product-table" id="productTable">
+            <tbody id="productTableBody">
+              <tr><td class="empty-row" colspan="3">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SITE TEXT VIEW -->
+      <div class="view" id="view-content">
+        <div class="view-head">
+          <div><h2>Site Text</h2><p>Edit every text on your homepage. Changes go live instantly.</p></div>
+        </div>
+        <div class="card">
+          <form id="contentForm" onsubmit="return saveContent(event)">
+            <label>Top badge text</label>
+            <input type="text" id="pillTagText" placeholder="New drop live now">
+            <label>Main heading — line 1</label>
+            <input type="text" id="heroTitle1" placeholder="Made big,">
+            <label>Main heading — line 2 (colored)</label>
+            <input type="text" id="heroTitle2" placeholder="on purpose.">
+            <label>Hero subtitle</label>
+            <textarea id="heroSubtitle" placeholder="Drop-shoulder fits, cut for real bodies…"></textarea>
+            <label>"Find Your Fit" section heading</label>
+            <input type="text" id="fitHeading" placeholder="Find Your Fit">
+            <label>"Find Your Fit" description</label>
+            <textarea id="fitDesc" placeholder="Two quick tools — get a size recommendation…"></textarea>
+            <label>Shop section heading</label>
+            <input type="text" id="shopHeading" placeholder="Current Collection">
+            <label>Shop section description</label>
+            <input type="text" id="shopDesc" placeholder="Picked and cut by hand. Restocked as it sells.">
+            <label>About section heading</label>
+            <input type="text" id="aboutHeading" placeholder="Built For Real Bodies">
+            <label>About paragraph</label>
+            <textarea id="aboutText" placeholder="Comfortable, oversized basics…"></textarea>
+            <label>Bottom banner heading</label>
+            <input type="text" id="ctaHeading" placeholder="Ready to size up?">
+            <label>Bottom banner text</label>
+            <input type="text" id="ctaDesc" placeholder="Find your fit in 10 seconds, then shop the current drop.">
+            <label>Footer tagline</label>
+            <input type="text" id="footTagline" placeholder="Oversized fits for everyone.">
+            <label>Contact email</label>
+            <input type="text" id="contactEmail" placeholder="hello@oversized.com">
+            <label>Contact phone number</label>
+            <input type="text" id="contactPhone" placeholder="+91 98765 43210">
+            <label>WhatsApp number for orders</label>
+            <input type="text" id="whatsappNumber" placeholder="+91 98765 43210">
+            <button type="submit" class="btn" style="margin-top:20px;">Save all text</button>
+            <p class="msg" id="contentMsg"></p>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc,
+    onSnapshot, query, orderBy, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeKV88PVyBlNB8lxolfTuoeU0UTEnY7I8",
+    authDomain: "oversized-store.firebaseapp.com",
+    projectId: "oversized-store",
+    storageBucket: "oversized-store.firebasestorage.app",
+    messagingSenderId: "772182862392",
+    appId: "1:772182862392:web:d75ceb5578ce11eb0e14cd",
+    measurementId: "G-7DG8CTEGTS"
+  };
+
+  const OWNER_EMAIL = "oversizeapparel6@gmail.com";
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  /* ---------- auth ---------- */
+  window.doSignIn = function(){
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const msg = document.getElementById('signinMsg');
+    msg.style.display = 'none';
+    signInWithEmailAndPassword(auth, email, password)
+      .catch(() => { msg.style.display = 'block'; msg.textContent = 'Sign in failed — check email and password.'; });
+  };
+  window.doSignOut = function(){ signOut(auth); };
+
+  onAuthStateChanged(auth, (user) => {
+    const signinScreen = document.getElementById('signinScreen');
+    const dash = document.getElementById('dashboard');
+    if (user && user.email === OWNER_EMAIL) {
+      signinScreen.style.display = 'none';
+      dash.style.display = 'block';
+      document.getElementById('whoami').textContent = user.email;
+      startProductListener();
+      loadSiteContent();
+    } else {
+      if (user) signOut(auth);
+      dash.style.display = 'none';
+      signinScreen.style.display = 'flex';
+    }
+  });
+
+  /* ---------- sidebar navigation ---------- */
+  window.switchView = function(name){
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    document.querySelector(`.nav-btn[data-view="${name}"]`).classList.add('active');
+  };
+
+  /* ---------- image handling (up to 4 photos) ---------- */
+  const fileInput = document.getElementById('fileInput');
+  const previewRow = document.getElementById('previewRow');
+  const MAX_IMAGES = 4;
+  let currentImages = []; // array of dataURLs, first = main thumbnail
+
+  function renderPreviews(){
+    previewRow.innerHTML = '';
+    currentImages.forEach((src, i) => {
+      const box = document.createElement('div');
+      box.style.cssText = 'position:relative; width:64px; height:64px;';
+      box.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;${i===0?'box-shadow:0 0 0 2px var(--clay);':''}">
+        <button type="button" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#A5453B;color:#fff;border:none;font-size:11px;cursor:pointer;line-height:1;">✕</button>`;
+      box.querySelector('button').onclick = () => { currentImages.splice(i,1); renderPreviews(); };
+      previewRow.appendChild(box);
+    });
+    if (currentImages.length < MAX_IMAGES) {
+      const addBox = document.createElement('div');
+      addBox.style.cssText = 'width:64px;height:64px;border:1.5px dashed var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-size:20px;';
+      addBox.textContent = '+';
+      addBox.onclick = () => fileInput.click();
+      previewRow.appendChild(addBox);
+    }
+  }
+
+  function compressFile(file){
+    return new Promise((resolve, reject) => {
+      if (file.size > 5*1024*1024) { reject(new Error('Image over 5MB')); return; }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 750;
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            const scale = maxDim / Math.max(width, height);
+            width = Math.round(width * scale); height = Math.round(height * scale);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.68));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  fileInput.addEventListener('change', async () => {
+    const files = Array.from(fileInput.files).slice(0, MAX_IMAGES - currentImages.length);
+    for (const file of files) {
+      try { currentImages.push(await compressFile(file)); }
+      catch(err) { alert(err.message || 'Could not read image'); }
+    }
+    fileInput.value = '';
+    renderPreviews();
+  });
+  renderPreviews();
+
+  /* ---------- category & garment options ---------- */
+  const garmentOptions = {
+    "Streetwear": ["Oversized Tee","Oversized Hoodie","Crewneck Sweatshirt","Sweatpant","Jacket"],
+    "Men's Wear": ["Shirt","Kurta","Trousers","Blazer","Jacket"],
+    "Women's Wear": ["Blouse","Top","Dress","Co-ord Set","Kurta"]
+  };
+  window.updateGarmentOptions = function(preselect){
+    const cat = document.getElementById('category').value;
+    const garmentSel = document.getElementById('garment');
+    garmentSel.innerHTML = '';
+    garmentOptions[cat].forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g; opt.textContent = g;
+      garmentSel.appendChild(opt);
+    });
+    if (preselect) garmentSel.value = preselect;
+  };
+  updateGarmentOptions();
+
+  /* ---------- product form (add + edit) ---------- */
+  let editingId = null;
+
+  window.resetForm = function(){
+    editingId = null;
+    document.getElementById('designForm').reset();
+    updateGarmentOptions();
+    currentImages = [];
+    renderPreviews();
+    document.getElementById('formTitle').textContent = 'Add A Design';
+    document.getElementById('submitBtn').textContent = 'Add to shop';
+    document.getElementById('cancelEditBtn').style.display = 'none';
+    document.getElementById('uploadMsg').style.display = 'none';
+  };
+
+  window.editProduct = function(id, p){
+    editingId = id;
+    document.getElementById('designName').value = p.name || '';
+    const cat = p.category || 'Streetwear';
+    document.getElementById('category').value = cat;
+    updateGarmentOptions(p.garment || null);
+    document.getElementById('designPrice').value = (p.price || '').replace(/[^0-9]/g, '');
+    document.getElementById('designDesc').value = p.description || '';
+    currentImages = Array.isArray(p.images) && p.images.length ? [...p.images] : (p.image ? [p.image] : []);
+    renderPreviews();
+    document.getElementById('formTitle').textContent = 'Edit Design';
+    document.getElementById('submitBtn').textContent = 'Save changes';
+    document.getElementById('cancelEditBtn').style.display = 'inline-block';
+    document.getElementById('formGrid').scrollIntoView({behavior:'smooth', block:'center'});
+  };
+
+  window.submitDesign = function(e){
+    e.preventDefault();
+    const msg = document.getElementById('uploadMsg');
+    msg.className = 'msg';
+    if (currentImages.length === 0) {
+      msg.classList.add('error'); msg.style.display='block'; msg.textContent = 'Please upload at least one photo.';
+      return false;
+    }
+    const totalBytes = currentImages.reduce((sum, s) => sum + s.length, 0);
+    if (totalBytes > 900000) {
+      msg.classList.add('error'); msg.style.display='block';
+      msg.textContent = 'These photos are too large together — try removing one or use fewer/smaller photos.';
+      return false;
+    }
+    const category = document.getElementById('category').value;
+    const garment = document.getElementById('garment').value;
+    const product = {
+      name: document.getElementById('designName').value,
+      category: category,
+      garment: garment,
+      meta: category + ' · ' + garment,
+      price: '₹' + document.getElementById('designPrice').value.replace(/[^0-9]/g, ''),
+      description: document.getElementById('designDesc').value,
+      images: currentImages,
+      image: currentImages[0]
+    };
+    const promise = editingId
+      ? updateDoc(doc(db, "products", editingId), product)
+      : addDoc(collection(db, "products"), { ...product, createdAt: serverTimestamp() });
+
+    promise.then(() => {
+      msg.classList.add('ok'); msg.style.display = 'block';
+      msg.textContent = editingId ? 'Saved ✓' : 'Added to shop ✓ — live on the site now.';
+      window.resetForm();
+    }).catch(err => {
+      msg.classList.add('error'); msg.style.display = 'block';
+      msg.textContent = 'Could not save — ' + err.message;
+    });
+    return false;
+  };
+
+  window.removeProduct = function(id, name){
+    if (confirm(`Remove "${name}" from the live site?`)) deleteDoc(doc(db, "products", id));
+  };
+
+  /* ---------- product list + stats ---------- */
+  function startProductListener(){
+    const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snap) => {
+      const body = document.getElementById('productTableBody');
+      document.getElementById('statCount').textContent = snap.size;
+      let hoodies = 0, tees = 0;
+      if (snap.empty) {
+        body.innerHTML = '<tr><td class="empty-row" colspan="3">No products yet — add your first one above.</td></tr>';
+        document.getElementById('statHoodies').textContent = 0;
+        document.getElementById('statTees').textContent = 0;
+        return;
+      }
+      body.innerHTML = '';
+      snap.forEach(d => {
+        const p = d.data();
+        if ((p.meta||'').toLowerCase().includes('hoodie')) hoodies++;
+        if ((p.meta||'').toLowerCase().includes('tee')) tees++;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="width:44px;"><img src="${p.image||''}"></td>
+          <td><div class="pname">${p.name||'Untitled'}</div><div class="pmeta">${p.meta||''} · ${p.price||''}</div></td>
+          <td style="text-align:right;">
+            <div class="row-actions">
+              <button class="edit" data-id="${d.id}">Edit</button>
+              <button class="danger" data-id="${d.id}" data-name="${(p.name||'').replace(/"/g,'')}">Remove</button>
+            </div>
+          </td>`;
+        tr.querySelector('.edit').onclick = () => window.editProduct(d.id, p);
+        tr.querySelector('.danger').onclick = () => window.removeProduct(d.id, p.name || 'this item');
+        body.appendChild(tr);
+      });
+      document.getElementById('statHoodies').textContent = hoodies;
+      document.getElementById('statTees').textContent = tees;
+    });
+  }
+
+  /* ---------- site text ---------- */
+  const TEXT_FIELDS = ['pillTagText','heroTitle1','heroTitle2','heroSubtitle','fitHeading','fitDesc',
+    'shopHeading','shopDesc','aboutHeading','aboutText','ctaHeading','ctaDesc','footTagline','contactEmail','contactPhone','whatsappNumber'];
+
+  function loadSiteContent(){
+    getDoc(doc(db, "settings", "site")).then(snap => {
+      if (!snap.exists()) return;
+      const s = snap.data();
+      TEXT_FIELDS.forEach(f => { const el = document.getElementById(f); if (el && s[f]) el.value = s[f]; });
+    });
+  }
+
+  window.saveContent = function(e){
+    e.preventDefault();
+    const msg = document.getElementById('contentMsg');
+    msg.className = 'msg';
+    const data = {};
+    TEXT_FIELDS.forEach(f => { const el = document.getElementById(f); if (el) data[f] = el.value; });
+    setDoc(doc(db, "settings", "site"), data, { merge: true })
+      .then(() => { msg.classList.add('ok'); msg.style.display='block'; msg.textContent = 'Saved ✓ — live on the site now.'; })
+      .catch(err => { msg.classList.add('error'); msg.style.display='block'; msg.textContent = 'Could not save — ' + err.message; });
+    return false;
+  };
+</script>
+</body>
+</html>
